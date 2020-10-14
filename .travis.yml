@@ -1,0 +1,36 @@
+# sistem operasi yang digunakan
+os:
+  - linux
+# bahasa yang digunakan
+language: php
+# menggunakan distro  yang dipercaya
+dist: trusty
+
+# versi bahasa
+php:
+  - '7.1'
+# service yang digunakan
+services:
+  - docker
+
+# grouping task 
+jobs:
+  include:
+  # untuk melakukan testing code
+    - stage: "Tests"                
+      name: "Unit Test PHP"  
+      script: 
+      - travis_retry composer self-update
+      - travis_retry composer install --prefer-source --no-interaction
+      - cp .env.example .env
+      - php artisan key:generate
+      - vendor/bin/phpunit tests/Feature/ExampleTest.php
+    # untuk melakukan build image dan push ke docker hub
+    - stage: "Build Docker Image"
+      name: "Build Images Docker" 
+      script:
+      - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+      - docker build -t travis-ci-build-stages-demo .
+      - docker images
+      - docker tag travis-ci-build-stages-demo $DOCKER_USERNAME/cicd-laravel
+      - docker push $DOCKER_USERNAME/cicd-laravel
